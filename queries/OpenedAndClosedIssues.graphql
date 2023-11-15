@@ -1,0 +1,29 @@
+query OpenedAndClosedIssues($owner: String!, $name: String!, $pageSize: Int!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    issues(
+      first: $pageSize
+      after: $after
+      orderBy: {direction: ASC, field: CREATED_AT}
+    ) {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        number
+        url
+        title
+        state
+        createdAt
+        closedAt
+        labels(first: 100) {
+          totalCount
+          nodes {
+            name
+          }
+        }
+      }
+    }
+  }
+}
