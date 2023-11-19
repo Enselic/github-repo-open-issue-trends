@@ -6,8 +6,9 @@ A bit hacky.
 # Example
 
 ```sh
-CARGO_LOG=info cargo run -- \
-    --label-category C-bug:bugs \
+RUST_LOG=info \
+cargo run -- \
+    --label-category "C-bug:bugs" \
     --label-category "C-cleanup:feature requests" \
     --label-category "C-enhancement:feature requests" \
     --label-category "C-feature-accepted:feature requests" \
@@ -15,7 +16,7 @@ CARGO_LOG=info cargo run -- \
     --label-category "C-future-compatibility:feature requests" \
     --label-category "C-optimization:feature requests" \
     --label-category "C-tracking-issue:feature requests" \
-    --label-category '*:uncategorized' \
+    --label-category "*:uncategorized" \
     --page-size 100 \
     --pages 9999 \
     rust-lang/rust
