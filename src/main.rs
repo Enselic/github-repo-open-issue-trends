@@ -68,13 +68,21 @@ async fn main() -> anyhow::Result<()> {
 
     let args = <Args as clap::Parser>::parse();
 
+    match args.period {
+        PeriodEnum::Month => run_main::<Month>(&args),
+        PeriodEnum::Week => unimplemented!("Weeks are not yet implemented"),
+    }
+}
+
+#[tokio::main]
+async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
     // Collect data
     let plot_data = collect_data(&args).await;
     let mut sorted_periods = plot_data.periods.keys().collect::<Vec<_>>();
     sorted_periods.sort();
 
     // Prepare output files
-    let mut tsv_output_files: Vec<Box<dyn TsvOutputFile>> = vec![
+    let mut tsv_output_files: Vec<Box<dyn TsvOutputFile<P>>> = vec![
         Box::new(PeriodStatsFile::new(&args.opened_issues_output, Counter::Opened).unwrap()),
         Box::new(PeriodStatsFile::new(&args.closed_issues_output, Counter::Closed).unwrap()),
         Box::new(AccumulatedPeriodStatsFile::new(&args.open_issues_output).unwrap()),
@@ -185,7 +193,7 @@ impl<P: Period> PlotData<P> {
         }
     }
 
-    fn increment(&mut self, period: PeriodEnum, category: IssueCategory, counter: Counter) {
+    fn increment(&mut self, period: P, category: IssueCategory, counter: Counter) {
         self.periods
             .entry(period)
             .or_default()
