@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -14,14 +15,6 @@ use tsv_output_file::*;
 
 mod period;
 use period::*;
-
-#[derive(Debug, Clone, clap::ValueEnum)]
-enum PeriodEnum {
-    Month,
-    TwoMonths,
-    Quarter,
-    Year,
-}
 
 #[derive(clap::Parser, Debug)]
 pub struct Args {
@@ -173,6 +166,7 @@ pub struct PlotData<P: Period> {
     /// Maps a period such as "2023 May" to period data.
     periods: HashMap<P, PeriodData>,
     label_to_category: HashMap<String, IssueCategory>,
+    category_to_labels: HashMap<IssueCategory, String>,
     categories: Vec<IssueCategory>,
 }
 
@@ -180,17 +174,23 @@ impl<P: Period> PlotData<P> {
     fn new(args: &Args) -> Self {
         let mut categories = vec![];
         let mut label_to_category = HashMap::new();
+        let mut category_to_labels = HashMap::new();
 
         for (label, category) in &args.label_category {
             if !categories.contains(category) {
                 categories.push(category.clone());
             }
             label_to_category.insert(label.clone(), category.clone());
+            category_to_labels
+                .entry(category.clone())
+                .and_modify(|labels: &mut String| labels.push_str(","))
+                .or_insert_with(|| label.clone());
         }
 
         Self {
             periods: HashMap::new(),
             label_to_category,
+            category_to_labels,
             categories,
         }
     }
@@ -264,6 +264,24 @@ impl OpenedAndClosedIssuesRepositoryIssuesNodes {
             unreachable!("Unknown issue state: {:?}", self.state);
         } else {
             None
+        }
+    }
+}
+
+#[derive(Debug, Clone, clap::ValueEnum)]
+enum PeriodEnum {
+    Month,
+    TwoMonths,
+    Quarter,
+    Year,
+}
+impl Display for PeriodEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PeriodEnum::Month => write!(f, "month"),
+            PeriodEnum::TwoMonths => write!(f, "months"),
+            PeriodEnum::Quarter => write!(f, "quarter"),
+            PeriodEnum::Year => write!(f, "year"),
         }
     }
 }
