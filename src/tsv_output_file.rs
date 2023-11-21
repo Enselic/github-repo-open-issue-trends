@@ -36,7 +36,7 @@ impl<P: Period> TsvOutputFile<P> for PeriodStatsFile {
             Counter::Closed => "Closed ",
         };
 
-        write!(self.file, "Month")?;
+        write!(self.file, "{}", P::STRING)?;
         for category in categories {
             write!(self.file, "\t{prefix}{category}")?;
         }
@@ -76,7 +76,7 @@ impl AccumulatedPeriodStatsFile {
 
 impl<P: Period> TsvOutputFile<P> for AccumulatedPeriodStatsFile {
     fn add_headers(&mut self, categories: &[IssueCategory]) -> std::io::Result<()> {
-        write!(self.file, "Month")?;
+        write!(self.file, "{}", P::STRING)?;
         for category in categories {
             write!(self.file, "\tOpen {category}")?;
         }

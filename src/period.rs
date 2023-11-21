@@ -5,6 +5,7 @@ use chrono::{Datelike, Utc};
 pub trait Period:
     Debug + Display + Ord + std::hash::Hash + Eq + std::convert::From<chrono::DateTime<chrono::Utc>>
 {
+    const STRING: &'static str;
 }
 
 #[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
@@ -22,7 +23,9 @@ impl From<chrono::DateTime<Utc>> for Month {
     }
 }
 
-impl Period for Month {}
+impl Period for Month {
+    const STRING: &'static str = "month";
+}
 
 impl Display for Month {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -83,7 +86,9 @@ impl Display for TwoMonths {
     }
 }
 
-impl Period for TwoMonths {}
+impl Period for TwoMonths {
+    const STRING: &'static str = "months";
+}
 
 #[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
 pub struct Quarter {
@@ -117,7 +122,9 @@ impl Display for Quarter {
     }
 }
 
-impl Period for Quarter {}
+impl Period for Quarter {
+    const STRING: &'static str = "quarter";
+}
 
 #[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
 pub struct Year(i32);
@@ -134,4 +141,6 @@ impl Display for Year {
     }
 }
 
-impl Period for Year {}
+impl Period for Year {
+    const STRING: &'static str = "year";
+}
