@@ -63,18 +63,16 @@ pub struct Args {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // RUST_LOG=github_repo_open_issues=debug cargo run
     tracing_subscriber::fmt::init();
 
     let args = <Args as clap::Parser>::parse();
 
     match args.period {
-        PeriodEnum::Month => run_main::<Month>(&args),
-        PeriodEnum::TwoMonths => run_main::<TwoMonths>(&args),
+        PeriodEnum::Month => run_main::<Month>(&args).await,
+        PeriodEnum::TwoMonths => run_main::<TwoMonths>(&args).await,
     }
 }
 
-#[tokio::main]
 async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
     // Collect data
     let plot_data = collect_data(&args).await;
