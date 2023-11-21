@@ -7,7 +7,7 @@ pub trait TsvOutputFile {
 
     fn add_row(
         &mut self,
-        period: &Period,
+        period: &dyn Period,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()>;
@@ -45,7 +45,7 @@ impl TsvOutputFile for PeriodStatsFile {
 
     fn add_row(
         &mut self,
-        period: &Period,
+        period: &dyn Period,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()> {
@@ -85,7 +85,7 @@ impl TsvOutputFile for AccumulatedPeriodStatsFile {
 
     fn add_row(
         &mut self,
-        period: &Period,
+        period: &dyn Period,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()> {

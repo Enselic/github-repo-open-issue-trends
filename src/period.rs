@@ -1,8 +1,8 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
-use chrono::{Utc, Datelike};
+use chrono::{Datelike, Utc};
 
-trait Period {}
+pub trait Period: Debug + Display + Ord {}
 
 impl Period for Month {}
 

@@ -12,16 +12,14 @@ use models::*;
 mod tsv_output_file;
 use tsv_output_file::*;
 
-
 mod period;
-
+use period::*;
 
 #[derive(Debug, Clone, clap::ValueEnum)]
-enum Period {
+enum PeriodEnum {
     Month,
     Week,
 }
-
 
 #[derive(clap::Parser, Debug)]
 pub struct Args {
@@ -30,7 +28,7 @@ pub struct Args {
 
     #[arg(long, default_value = "month")]
     /// Whether to use months or weeks as the period.
-    period: Period,
+    period: PeriodEnum,
 
     /// How many issues to fetch per page.
     #[arg(long, default_value = "10")]
@@ -163,7 +161,7 @@ async fn collect_data(args: &Args) -> PlotData {
 #[derive(Debug)]
 pub struct PlotData {
     /// Maps a period such as "2023 May" to period data.
-    periods: HashMap<Period, PeriodData>,
+    periods: HashMap<Box<dyn Period>, PeriodData>,
     label_to_category: HashMap<String, IssueCategory>,
     categories: Vec<IssueCategory>,
 }
@@ -187,7 +185,7 @@ impl PlotData {
         }
     }
 
-    fn increment(&mut self, period: Period, category: IssueCategory, counter: Counter) {
+    fn increment(&mut self, period: PeriodEnum, category: IssueCategory, counter: Counter) {
         self.periods
             .entry(period)
             .or_default()
