@@ -19,6 +19,7 @@ use period::*;
 enum PeriodEnum {
     Month,
     TwoMonths,
+    Quarter,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -70,6 +71,7 @@ async fn main() -> anyhow::Result<()> {
     match args.period {
         PeriodEnum::Month => run_main::<Month>(&args).await,
         PeriodEnum::TwoMonths => run_main::<TwoMonths>(&args).await,
+        PeriodEnum::Quarter => run_main::<Quarter>(&args).await,
     }
 }
 

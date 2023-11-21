@@ -84,3 +84,37 @@ impl Display for TwoMonths {
 }
 
 impl Period for TwoMonths {}
+
+#[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
+pub struct Quarter {
+    year: i32,
+    quarter: u32,
+}
+
+impl From<chrono::DateTime<Utc>> for Quarter {
+    fn from(value: chrono::DateTime<Utc>) -> Self {
+        Self {
+            year: value.year(),
+            quarter: (value.month() - 1) / 3,
+        }
+    }
+}
+
+impl Display for Quarter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {}",
+            self.year,
+            match self.quarter {
+                0 => "Q1",
+                1 => "Q2",
+                2 => "Q3",
+                3 => "Q4",
+                _ => unreachable!(),
+            }
+        )
+    }
+}
+
+impl Period for Quarter {}
