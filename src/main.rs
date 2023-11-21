@@ -12,10 +12,25 @@ use models::*;
 mod tsv_output_file;
 use tsv_output_file::*;
 
+
+mod period;
+
+
+#[derive(Debug, Clone, clap::ValueEnum)]
+enum Period {
+    Month,
+    Week,
+}
+
+
 #[derive(clap::Parser, Debug)]
 pub struct Args {
     /// The GitHub repo. E.g. "rust-lang/rust"
     repo: String,
+
+    #[arg(long, default_value = "month")]
+    /// Whether to use months or weeks as the period.
+    period: Period,
 
     /// How many issues to fetch per page.
     #[arg(long, default_value = "10")]
