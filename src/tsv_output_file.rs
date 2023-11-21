@@ -2,12 +2,12 @@ use std::fs::File;
 
 use super::*;
 
-pub trait TsvOutputFile {
+pub trait TsvOutputFile<P: Period> {
     fn add_headers(&mut self, categories: &[IssueCategory]) -> std::io::Result<()>;
 
     fn add_row(
         &mut self,
-        period: &dyn Period,
+        period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()>;
@@ -29,7 +29,7 @@ impl PeriodStatsFile {
     }
 }
 
-impl TsvOutputFile for PeriodStatsFile {
+impl<P: Period> TsvOutputFile<P> for PeriodStatsFile {
     fn add_headers(&mut self, categories: &[IssueCategory]) -> std::io::Result<()> {
         let prefix = match self.counter_to_use {
             Counter::Opened => "Opened ",
@@ -45,7 +45,7 @@ impl TsvOutputFile for PeriodStatsFile {
 
     fn add_row(
         &mut self,
-        period: &dyn Period,
+        period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()> {
@@ -74,7 +74,7 @@ impl AccumulatedPeriodStatsFile {
     }
 }
 
-impl TsvOutputFile for AccumulatedPeriodStatsFile {
+impl<P: Period> TsvOutputFile<P> for AccumulatedPeriodStatsFile {
     fn add_headers(&mut self, categories: &[IssueCategory]) -> std::io::Result<()> {
         write!(self.file, "Month")?;
         for category in categories {
@@ -85,7 +85,7 @@ impl TsvOutputFile for AccumulatedPeriodStatsFile {
 
     fn add_row(
         &mut self,
-        period: &dyn Period,
+        period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()> {

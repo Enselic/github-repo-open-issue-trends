@@ -101,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn collect_data(args: &Args) -> PlotData {
+async fn collect_data<P: Period>(args: &Args) -> PlotData<P> {
     let octocrab = octocrab::Octocrab::builder()
         .personal_token(github_api_token())
         .build()
@@ -159,14 +159,14 @@ async fn collect_data(args: &Args) -> PlotData {
 }
 
 #[derive(Debug)]
-pub struct PlotData {
+pub struct PlotData<P: Period> {
     /// Maps a period such as "2023 May" to period data.
-    periods: HashMap<Box<dyn Period>, PeriodData>,
+    periods: HashMap<P, PeriodData>,
     label_to_category: HashMap<String, IssueCategory>,
     categories: Vec<IssueCategory>,
 }
 
-impl PlotData {
+impl<P: Period> PlotData<P> {
     fn new(args: &Args) -> Self {
         let mut categories = vec![];
         let mut label_to_category = HashMap::new();
