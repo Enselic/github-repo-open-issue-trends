@@ -1,6 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
-
-use chrono::{Datelike, Utc};
+use std::collections::HashMap;
 
 pub use opened_and_closed_issues::*;
 
