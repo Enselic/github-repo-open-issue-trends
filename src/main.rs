@@ -70,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
 
     match args.period {
         PeriodEnum::Month => run_main::<Month>(&args),
-        PeriodEnum::TwoMonths => unimplemented!("Weeks are not yet implemented"),
+        PeriodEnum::TwoMonths => run_main::<TwoMonths>(&args),
     }
 }
 
