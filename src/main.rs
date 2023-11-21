@@ -73,6 +73,7 @@ async fn main() -> anyhow::Result<()> {
         PeriodEnum::Month => run_main::<Month>(&args).await,
         PeriodEnum::TwoMonths => run_main::<TwoMonths>(&args).await,
         PeriodEnum::Quarter => run_main::<Quarter>(&args).await,
+        PeriodEnum::Year => run_main::<Year>(&args).await,
     }
 }
 
