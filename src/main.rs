@@ -18,7 +18,7 @@ use period::*;
 #[derive(Debug, Clone, clap::ValueEnum)]
 enum PeriodEnum {
     Month,
-    Week,
+    TwoMonths,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -70,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
 
     match args.period {
         PeriodEnum::Month => run_main::<Month>(&args),
-        PeriodEnum::Week => unimplemented!("Weeks are not yet implemented"),
+        PeriodEnum::TwoMonths => unimplemented!("Weeks are not yet implemented"),
     }
 }
 

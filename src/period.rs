@@ -7,8 +7,6 @@ pub trait Period:
 {
 }
 
-impl Period for Month {}
-
 #[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
 pub struct Month {
     year: i32,
@@ -23,6 +21,8 @@ impl From<chrono::DateTime<Utc>> for Month {
         }
     }
 }
+
+impl Period for Month {}
 
 impl Display for Month {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -48,3 +48,39 @@ impl Display for Month {
         )
     }
 }
+
+#[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
+pub struct TwoMonths {
+    year: i32,
+    month_pair: u32,
+}
+
+impl From<chrono::DateTime<Utc>> for TwoMonths {
+    fn from(value: chrono::DateTime<Utc>) -> Self {
+        Self {
+            year: value.year(),
+            month_pair: (value.month() - 1) / 2,
+        }
+    }
+}
+
+impl Display for TwoMonths {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {}",
+            self.year,
+            match self.month_pair {
+                0 => "Jan-Feb",
+                1 => "Mar-Apr",
+                2 => "May-Jun",
+                3 => "Jul-Aug",
+                4 => "Sep-Oct",
+                5 => "Nov-Dec",
+                _ => unreachable!(),
+            }
+        )
+    }
+}
+
+impl Period for TwoMonths {}
