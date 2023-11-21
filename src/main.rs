@@ -20,6 +20,7 @@ enum PeriodEnum {
     Month,
     TwoMonths,
     Quarter,
+    Year,
 }
 
 #[derive(clap::Parser, Debug)]

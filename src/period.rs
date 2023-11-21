@@ -118,3 +118,20 @@ impl Display for Quarter {
 }
 
 impl Period for Quarter {}
+
+#[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
+pub struct Year(i32);
+
+impl From<chrono::DateTime<Utc>> for Year {
+    fn from(value: chrono::DateTime<Utc>) -> Self {
+        Self(value.year())
+    }
+}
+
+impl Display for Year {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Period for Year {}
