@@ -3,7 +3,11 @@ use std::fs::File;
 use super::*;
 
 pub trait TsvOutputFile<P: Period> {
-    fn add_headers(&mut self, categories: &[IssueCategory]) -> std::io::Result<()>;
+    fn add_headers(
+        &mut self,
+        categories: &[IssueCategory],
+        category_to_labels: &HashMap<IssueCategory, String>,
+    ) -> std::io::Result<()>;
 
     fn add_row(
         &mut self,
@@ -30,7 +34,11 @@ impl PeriodStatsFile {
 }
 
 impl<P: Period> TsvOutputFile<P> for PeriodStatsFile {
-    fn add_headers(&mut self, categories: &[IssueCategory]) -> std::io::Result<()> {
+    fn add_headers(
+        &mut self,
+        categories: &[IssueCategory],
+        category_to_labels: &HashMap<IssueCategory, String>,
+    ) -> std::io::Result<()> {
         let prefix = match self.counter_to_use {
             Counter::Opened => "Opened ",
             Counter::Closed => "Closed ",
@@ -38,7 +46,14 @@ impl<P: Period> TsvOutputFile<P> for PeriodStatsFile {
 
         write!(self.file, "{}", P::STRING)?;
         for category in categories {
-            write!(self.file, "\t{prefix}{category}")?;
+            write!(
+                self.file,
+                "\t{prefix}{category}{}",
+                category_to_labels
+                    .get(category)
+                    .map(|labels| format!(" ({labels})"))
+                    .unwrap_or_default()
+            )?;
         }
         writeln!(self.file)
     }
@@ -75,10 +90,21 @@ impl AccumulatedPeriodStatsFile {
 }
 
 impl<P: Period> TsvOutputFile<P> for AccumulatedPeriodStatsFile {
-    fn add_headers(&mut self, categories: &[IssueCategory]) -> std::io::Result<()> {
+    fn add_headers(
+        &mut self,
+        categories: &[IssueCategory],
+        category_to_labels: &HashMap<IssueCategory, String>,
+    ) -> std::io::Result<()> {
         write!(self.file, "{}", P::STRING)?;
         for category in categories {
-            write!(self.file, "\tOpen {category}")?;
+            write!(
+                self.file,
+                "\tOpen {category}{}",
+                category_to_labels
+                    .get(category)
+                    .map(|labels| format!(" ({labels})"))
+                    .unwrap_or_default()
+            );
         }
         writeln!(self.file)
     }
