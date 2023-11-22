@@ -113,8 +113,8 @@ impl<P: Period> TsvOutputFile<P> for AccumulatedPeriodStatsFile {
     ) -> std::io::Result<()> {
         write!(self.file, "{period}")?;
         for category in categories {
-            let delta = period_data.get(category.clone(), Counter::Opened)
-                - period_data.get(category.clone(), Counter::Closed);
+            let delta = period_data.get(category, Counter::Opened)
+                - period_data.get(category, Counter::Closed);
             self.total
                 .entry(category.clone())
                 .and_modify(|c| *c += delta)
