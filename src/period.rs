@@ -24,7 +24,7 @@ impl From<chrono::DateTime<Utc>> for Month {
 }
 
 impl Period for Month {
-    const STRING: &'static str = "month";
+    const STRING: &'static str = "Month";
 }
 
 impl Display for Month {
@@ -87,7 +87,7 @@ impl Display for TwoMonths {
 }
 
 impl Period for TwoMonths {
-    const STRING: &'static str = "months";
+    const STRING: &'static str = "Months";
 }
 
 #[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
@@ -123,7 +123,7 @@ impl Display for Quarter {
 }
 
 impl Period for Quarter {
-    const STRING: &'static str = "quarter";
+    const STRING: &'static str = "Quarter";
 }
 
 #[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
@@ -142,5 +142,5 @@ impl Display for Year {
 }
 
 impl Period for Year {
-    const STRING: &'static str = "year";
+    const STRING: &'static str = "Year";
 }

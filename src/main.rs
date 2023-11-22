@@ -87,7 +87,9 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
 
     // Add headers to all files
     for output_file in &mut tsv_output_files {
-        output_file.add_headers(&plot_data.categories).unwrap();
+        output_file
+            .add_headers(&plot_data.categories, &plot_data.category_to_labels)
+            .unwrap();
     }
 
     // Add rows to all files
@@ -288,7 +290,6 @@ impl Display for PeriodEnum {
     }
 }
 
-
 impl Args {
     fn repo_owner(&self) -> String {
         self.repo.split('/').next().unwrap().to_string()
@@ -341,7 +342,6 @@ async fn make_github_graphql_api_request(
 
     response
 }
-
 
 fn parse_label_category(value: &str) -> anyhow::Result<(String, String)> {
     let (key, value) = value.split_once(':').unwrap();

@@ -104,7 +104,7 @@ impl<P: Period> TsvOutputFile<P> for AccumulatedPeriodStatsFile {
                     .get(category)
                     .map(|labels| format!(" ({labels})"))
                     .unwrap_or_default()
-            );
+            )?;
         }
         writeln!(self.file)
     }
