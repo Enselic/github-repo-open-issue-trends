@@ -17,38 +17,34 @@ pub trait TsvOutputFile<P: Period> {
     ) -> std::io::Result<()>;
 }
 
-pub struct PeriodStatsFile {
+pub struct PeriodStatsFile<F: Fn(&PeriodData, &IssueCategory) -> i64> {
     file: File,
-    counter_to_use: Counter,
+    get_value_fn: F,
 }
 
-impl PeriodStatsFile {
-    pub fn new(output_path: &Path, counter_to_use: Counter) -> std::io::Result<Self> {
-        let file = File::create(output_path)?;
-        let x = Self {
-            file,
-            counter_to_use,
-        };
-        Ok(x)
+impl<F: Fn(&PeriodData, &IssueCategory) -> i64> PeriodStatsFile<F> {
+    pub fn new(output_path: &Path, get_value_fn: F) -> Box<Self> {
+        let file = File::create(output_path).unwrap();
+        Box::new(Self { file, get_value_fn })
     }
 }
 
-impl<P: Period> TsvOutputFile<P> for PeriodStatsFile {
+impl<P: Period, F: Fn(&PeriodData, &IssueCategory) -> i64> TsvOutputFile<P> for PeriodStatsFile<F> {
     fn add_headers(
         &mut self,
         categories: &[IssueCategory],
         category_to_labels: &HashMap<IssueCategory, String>,
     ) -> std::io::Result<()> {
-        let prefix = match self.counter_to_use {
-            Counter::Opened => "Opened ",
-            Counter::Closed => "Closed ",
-        };
+        // let prefix = match self.counter_to_use {
+        //     Counter::Opened => "Opened ",
+        //     Counter::Closed => "Closed ",
+        // };
 
         write!(self.file, "{}", P::STRING)?;
         for category in categories {
             write!(
                 self.file,
-                "\t{prefix}{category}{}",
+                "\tTODO{{prefix}}{category}{}",
                 category_to_labels
                     .get(category)
                     .map(|labels| format!(" ({labels})"))
@@ -66,7 +62,7 @@ impl<P: Period> TsvOutputFile<P> for PeriodStatsFile {
     ) -> std::io::Result<()> {
         write!(self.file, "{period}")?;
         for category in categories {
-            let value = period_data.get(category.clone(), self.counter_to_use);
+            let value = (self.get_value_fn)(period_data, category);
             write!(self.file, "\t{value}",)?;
         }
         writeln!(self.file)

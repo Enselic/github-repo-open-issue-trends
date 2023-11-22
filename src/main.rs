@@ -48,6 +48,10 @@ pub struct Args {
     #[arg(long, default_value = "closed-issues.tsv")]
     closed_issues_output: PathBuf,
 
+    /// How many issues were closed in each month, .tsv output path.
+    #[arg(long, default_value = "opened-minus-closed-issues.tsv")]
+    opened_minus_closed_issues_output: PathBuf,
+
     /// How many issues are open in total at the end of each month, .tsv output path.
     #[arg(long, default_value = "open-issues.tsv")]
     open_issues_output: PathBuf,
@@ -80,8 +84,15 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
 
     // Prepare output files
     let mut tsv_output_files: Vec<Box<dyn TsvOutputFile<P>>> = vec![
-        Box::new(PeriodStatsFile::new(&args.opened_issues_output, Counter::Opened).unwrap()),
-        Box::new(PeriodStatsFile::new(&args.closed_issues_output, Counter::Closed).unwrap()),
+        PeriodStatsFile::new(&args.opened_issues_output, |data, category| {
+            data.get(category, Counter::Opened)
+        }),
+        PeriodStatsFile::new(&args.closed_issues_output, |data, category| {
+            data.get(category, Counter::Closed)
+        }),
+        PeriodStatsFile::new(&args.opened_minus_closed_issues_output, |data, category| {
+            data.get(category, Counter::Opened) - data.get(category, Counter::Closed)
+        }),
         Box::new(AccumulatedPeriodStatsFile::new(&args.open_issues_output).unwrap()),
     ];
 

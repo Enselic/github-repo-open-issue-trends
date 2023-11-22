@@ -38,8 +38,8 @@ type IssueCategory = String;
 pub struct PeriodData(HashMap<IssueCategory, Counters>);
 
 impl PeriodData {
-    pub fn get(&self, category: IssueCategory, counter: Counter) -> i64 {
-        if let Some(category) = self.0.get(&category) {
+    pub fn get(&self, category: &IssueCategory, counter: Counter) -> i64 {
+        if let Some(category) = self.0.get(category) {
             if let Some(counter) = category.0.get(&counter) {
                 return *counter;
             }
