@@ -1,6 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
-
-use chrono::{Datelike, Utc};
+use std::collections::HashMap;
 
 pub use opened_and_closed_issues::*;
 
@@ -40,8 +38,8 @@ type IssueCategory = String;
 pub struct PeriodData(HashMap<IssueCategory, Counters>);
 
 impl PeriodData {
-    pub fn get(&self, category: IssueCategory, counter: Counter) -> i64 {
-        if let Some(category) = self.0.get(&category) {
+    pub fn get(&self, category: &IssueCategory, counter: Counter) -> i64 {
+        if let Some(category) = self.0.get(category) {
             if let Some(counter) = category.0.get(&counter) {
                 return *counter;
             }
@@ -57,45 +55,5 @@ impl PeriodData {
             .0
             .get_mut(&counter)
             .unwrap() += 1;
-    }
-}
-
-impl From<chrono::DateTime<Utc>> for Period {
-    fn from(value: chrono::DateTime<Utc>) -> Self {
-        Period {
-            year: value.year(),
-            month: value.month(),
-        }
-    }
-}
-
-#[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
-pub struct Period {
-    year: i32,
-    month: u32,
-}
-
-impl Display for Period {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} {}",
-            self.year,
-            match self.month {
-                1 => "Jan",
-                2 => "Feb",
-                3 => "Mar",
-                4 => "Apr",
-                5 => "May",
-                6 => "Jun",
-                7 => "Jul",
-                8 => "Aug",
-                9 => "Sep",
-                10 => "Oct",
-                11 => "Nov",
-                12 => "Dec",
-                _ => unreachable!(),
-            }
-        )
     }
 }

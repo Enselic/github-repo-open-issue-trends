@@ -1,21 +1,30 @@
+use std::fmt::Display;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
-use serde::Serialize;
 use tracing::*;
 
 mod models;
 use models::*;
 
-mod tsv_output_file;
-use tsv_output_file::*;
+mod tsv_columns;
+use tsv_columns::*;
+
+mod period;
+use period::*;
+
+mod utils;
+use utils::*;
 
 #[derive(clap::Parser, Debug)]
 pub struct Args {
     /// The GitHub repo. E.g. "rust-lang/rust"
     repo: String,
+
+    #[arg(long, default_value = "month")]
+    /// Whether to use months or weeks as the period.
+    period: PeriodEnum,
 
     /// How many issues to fetch per page.
     #[arg(long, default_value = "10")]
@@ -30,17 +39,9 @@ pub struct Args {
     #[arg(short='c', long, value_parser = parse_label_category, value_delimiter = ',')]
     label_category: Vec<(String, String)>,
 
-    /// How many issues were opened in each month, .tsv output path.
-    #[arg(long, default_value = "opened-issues.tsv")]
-    opened_issues_output: PathBuf,
-
-    /// How many issues were closed in each month, .tsv output path.
-    #[arg(long, default_value = "closed-issues.tsv")]
-    closed_issues_output: PathBuf,
-
-    /// How many issues are open in total at the end of each month, .tsv output path.
-    #[arg(long, default_value = "open-issues.tsv")]
-    open_issues_output: PathBuf,
+    /// Path of the output .tsv file
+    #[arg(long, default_value = "issues.tsv")]
+    tsv_output: PathBuf,
 
     /// Where to save GitHub GraphQL API responses to save on the rate limit. By
     /// default `~/.cache/enselic/github-repo-open-issues/...` is used.
@@ -50,45 +51,69 @@ pub struct Args {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // RUST_LOG=github_repo_open_issues=debug cargo run
     tracing_subscriber::fmt::init();
 
     let args = <Args as clap::Parser>::parse();
 
+    match args.period {
+        PeriodEnum::Month => run_main::<Month>(&args).await,
+        PeriodEnum::TwoMonths => run_main::<TwoMonths>(&args).await,
+        PeriodEnum::Quarter => run_main::<Quarter>(&args).await,
+        PeriodEnum::Year => run_main::<Year>(&args).await,
+    }
+}
+
+async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
     // Collect data
     let plot_data = collect_data(&args).await;
-    let mut sorted_periods = plot_data.periods.keys().collect::<Vec<_>>();
+    let mut sorted_periods: Vec<P> = plot_data.periods.keys().cloned().collect();
     sorted_periods.sort();
 
     // Prepare output files
-    let mut tsv_output_files: Vec<Box<dyn TsvOutputFile>> = vec![
-        Box::new(PeriodStatsFile::new(&args.opened_issues_output, Counter::Opened).unwrap()),
-        Box::new(PeriodStatsFile::new(&args.closed_issues_output, Counter::Closed).unwrap()),
-        Box::new(AccumulatedPeriodStatsFile::new(&args.open_issues_output).unwrap()),
+    let mut tsv_output = File::create(&args.tsv_output)?;
+    let mut tsv_columns: Vec<Box<dyn TsvColumns<P>>> = vec![
+        PeriodColumns::new("Opened ".to_string(), |data, category| {
+            data.get(category, Counter::Opened)
+        }),
+        PeriodColumns::new("Closed ".to_string(), |data, category| {
+            data.get(category, Counter::Closed)
+        }),
+        PeriodColumns::new("Opened - Closed ".to_string(), |data, category| {
+            data.get(category, Counter::Opened) - data.get(category, Counter::Closed)
+        }),
+        Box::new(AccumulatedPeriodColumns::new().unwrap()),
     ];
 
     // Add headers to all files
-    for output_file in &mut tsv_output_files {
-        output_file.add_headers(&plot_data.categories).unwrap();
+    write!(&mut tsv_output, "{}", P::STRING)?;
+    for output_file in &mut tsv_columns {
+        output_file.add_headers(
+            &mut tsv_output,
+            &plot_data.categories,
+            &plot_data.category_to_labels,
+        )?;
     }
+    writeln!(&mut tsv_output)?;
 
-    // Add rows to all files
     for period in sorted_periods {
-        for output_file in &mut tsv_output_files {
+        // Add rows to all files
+        write!(&mut tsv_output, "{}", period)?;
+        for output_file in &mut tsv_columns {
             output_file
                 .add_row(
-                    period,
-                    plot_data.periods.get(period).unwrap(),
+                    &mut tsv_output,
+                    plot_data.periods.get(&period).unwrap(),
                     &plot_data.categories,
                 )
                 .unwrap();
         }
+        writeln!(&mut tsv_output)?;
     }
 
     Ok(())
 }
 
-async fn collect_data(args: &Args) -> PlotData {
+async fn collect_data<P: Period>(args: &Args) -> PlotData<P> {
     let octocrab = octocrab::Octocrab::builder()
         .personal_token(github_api_token())
         .build()
@@ -146,33 +171,40 @@ async fn collect_data(args: &Args) -> PlotData {
 }
 
 #[derive(Debug)]
-pub struct PlotData {
+pub struct PlotData<P: Period> {
     /// Maps a period such as "2023 May" to period data.
-    periods: HashMap<Period, PeriodData>,
+    periods: HashMap<P, PeriodData>,
     label_to_category: HashMap<String, IssueCategory>,
+    category_to_labels: HashMap<IssueCategory, String>,
     categories: Vec<IssueCategory>,
 }
 
-impl PlotData {
+impl<P: Period> PlotData<P> {
     fn new(args: &Args) -> Self {
         let mut categories = vec![];
         let mut label_to_category = HashMap::new();
+        let mut category_to_labels = HashMap::new();
 
         for (label, category) in &args.label_category {
             if !categories.contains(category) {
                 categories.push(category.clone());
             }
             label_to_category.insert(label.clone(), category.clone());
+            category_to_labels
+                .entry(category.clone())
+                .and_modify(|labels: &mut String| labels.push_str(","))
+                .or_insert_with(|| label.clone());
         }
 
         Self {
             periods: HashMap::new(),
             label_to_category,
+            category_to_labels,
             categories,
         }
     }
 
-    fn increment(&mut self, period: Period, category: IssueCategory, counter: Counter) {
+    fn increment(&mut self, period: P, category: IssueCategory, counter: Counter) {
         self.periods
             .entry(period)
             .or_default()
@@ -245,18 +277,21 @@ impl OpenedAndClosedIssuesRepositoryIssuesNodes {
     }
 }
 
-fn github_api_token() -> String {
-    let output = std::process::Command::new("git")
-        .arg("config")
-        .arg("--get")
-        .arg("github.oauth-token")
-        .output()
-        .unwrap();
-
-    if output.status.success() {
-        String::from_utf8(output.stdout).unwrap().trim().to_string()
-    } else {
-        panic!("No GitHub token configured. To configure, run: git config github.oauth-token <your-token>")
+#[derive(Debug, Clone, clap::ValueEnum)]
+enum PeriodEnum {
+    Month,
+    TwoMonths,
+    Quarter,
+    Year,
+}
+impl Display for PeriodEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PeriodEnum::Month => write!(f, "month"),
+            PeriodEnum::TwoMonths => write!(f, "months"),
+            PeriodEnum::Quarter => write!(f, "quarter"),
+            PeriodEnum::Year => write!(f, "year"),
+        }
     }
 }
 
@@ -311,17 +346,6 @@ async fn make_github_graphql_api_request(
     }
 
     response
-}
-
-fn atomic_write(dest_path: &Path, data: &impl Serialize) -> std::io::Result<()> {
-    let mut tmp_path = dest_path.to_owned();
-    tmp_path.set_extension("tmp");
-
-    let tmp_file = File::create(&tmp_path)?;
-    serde_json::to_writer(&tmp_file, &data)?;
-    tmp_file.sync_all()?;
-
-    std::fs::rename(tmp_path, dest_path)
 }
 
 fn parse_label_category(value: &str) -> anyhow::Result<(String, String)> {

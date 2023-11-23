@@ -8,6 +8,7 @@ A bit hacky.
 ```sh
 RUST_LOG=info \
 cargo run -- \
+    --period month \
     --label-category "C-bug:bugs" \
     --label-category "C-cleanup:feature requests" \
     --label-category "C-enhancement:feature requests" \
