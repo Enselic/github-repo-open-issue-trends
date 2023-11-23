@@ -40,21 +40,9 @@ pub struct Args {
     #[arg(short='c', long, value_parser = parse_label_category, value_delimiter = ',')]
     label_category: Vec<(String, String)>,
 
-    /// How many issues were opened in each month, .tsv output path.
-    #[arg(long, default_value = "opened-issues.tsv")]
-    opened_issues_output: PathBuf,
-
-    /// How many issues were closed in each month, .tsv output path.
-    #[arg(long, default_value = "closed-issues.tsv")]
-    closed_issues_output: PathBuf,
-
-    /// How many issues were closed in each month, .tsv output path.
-    #[arg(long, default_value = "opened-minus-closed-issues.tsv")]
-    opened_minus_closed_issues_output: PathBuf,
-
-    /// How many issues are open in total at the end of each month, .tsv output path.
-    #[arg(long, default_value = "open-issues.tsv")]
-    open_issues_output: PathBuf,
+    /// Path of the output .tsv file
+    #[arg(long, default_value = "issues.tsv")]
+    issues_output: PathBuf,
 
     /// Where to save GitHub GraphQL API responses to save on the rate limit. By
     /// default `~/.cache/enselic/github-repo-open-issues/...` is used.
@@ -83,21 +71,21 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
     sorted_periods.sort();
 
     // Prepare output files
-    let mut tsv_output_files: Vec<Box<dyn TsvOutputFile<P>>> = vec![
-        PeriodStatsFile::new(&args.opened_issues_output, |data, category| {
+    let mut tsv_columns: Vec<Box<dyn TsvColumns<P>>> = vec![
+        PeriodColumns::new("Opened ".to_string(), |data, category| {
             data.get(category, Counter::Opened)
         }),
-        PeriodStatsFile::new(&args.closed_issues_output, |data, category| {
+        PeriodColumns::new("Closed ".to_string(), |data, category| {
             data.get(category, Counter::Closed)
         }),
-        PeriodStatsFile::new(&args.opened_minus_closed_issues_output, |data, category| {
+        PeriodColumns::new("Opened - Closed".to_string(), |data, category| {
             data.get(category, Counter::Opened) - data.get(category, Counter::Closed)
         }),
         Box::new(AccumulatedPeriodStatsFile::new(&args.open_issues_output).unwrap()),
     ];
 
     // Add headers to all files
-    for output_file in &mut tsv_output_files {
+    for output_file in &mut tsv_columns {
         output_file
             .add_headers(&plot_data.categories, &plot_data.category_to_labels)
             .unwrap();
@@ -105,7 +93,7 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
 
     // Add rows to all files
     for period in sorted_periods {
-        for output_file in &mut tsv_output_files {
+        for output_file in &mut tsv_columns {
             output_file
                 .add_row(
                     period,
