@@ -3,7 +3,13 @@ use std::fmt::{Debug, Display};
 use chrono::{Datelike, Utc};
 
 pub trait Period:
-    Debug + Display + Ord + std::hash::Hash + Eq + std::convert::From<chrono::DateTime<chrono::Utc>>
+    Debug
+    + Display
+    + Ord
+    + std::hash::Hash
+    + Eq
+    + std::convert::From<chrono::DateTime<chrono::Utc>>
+    + Clone
 {
     const STRING: &'static str;
 }

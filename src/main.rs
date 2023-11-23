@@ -66,7 +66,7 @@ async fn main() -> anyhow::Result<()> {
 async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
     // Collect data
     let plot_data = collect_data(&args).await;
-    let mut sorted_periods = plot_data.periods.keys().collect::<Vec<_>>();
+    let mut sorted_periods: Vec<P> = plot_data.periods.keys().cloned().collect();
     sorted_periods.sort();
 
     // Prepare output files
@@ -97,13 +97,12 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
 
     for period in sorted_periods {
         // Add rows to all files
-        write!(&mut tsv_output, "{period}")?;
+        write!(&mut tsv_output, "{}", period)?;
         for output_file in &mut tsv_columns {
             output_file
                 .add_row(
                     &mut tsv_output,
-                    period,
-                    plot_data.periods.get(period).unwrap(),
+                    plot_data.periods.get(&period).unwrap(),
                     &plot_data.categories,
                 )
                 .unwrap();
