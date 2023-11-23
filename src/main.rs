@@ -85,18 +85,19 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
     ];
 
     // Add headers to all files
+    write!(&mut tsv_output, "{}", P::STRING)?;
     for output_file in &mut tsv_columns {
-        output_file
-            .add_headers(
-                &mut tsv_output,
-                &plot_data.categories,
-                &plot_data.category_to_labels,
-            )
-            .unwrap();
+        output_file.add_headers(
+            &mut tsv_output,
+            &plot_data.categories,
+            &plot_data.category_to_labels,
+        )?;
     }
+    writeln!(&mut tsv_output)?;
 
-    // Add rows to all files
     for period in sorted_periods {
+        // Add rows to all files
+        write!(&mut tsv_output, "{period}")?;
         for output_file in &mut tsv_columns {
             output_file
                 .add_row(
@@ -107,6 +108,7 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
                 )
                 .unwrap();
         }
+        writeln!(&mut tsv_output)?;
     }
 
     Ok(())

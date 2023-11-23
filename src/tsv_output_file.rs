@@ -13,7 +13,6 @@ pub trait TsvColumns<P: Period> {
     fn add_row(
         &mut self,
         w: &mut File,
-        period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()>;
@@ -40,7 +39,6 @@ impl<P: Period, F: Fn(&PeriodData, &IssueCategory) -> i64> TsvColumns<P> for Per
         categories: &[IssueCategory],
         category_to_labels: &HashMap<IssueCategory, String>,
     ) -> std::io::Result<()> {
-        write!(w, "{}", P::STRING)?;
         for category in categories {
             write!(
                 w,
@@ -53,22 +51,20 @@ impl<P: Period, F: Fn(&PeriodData, &IssueCategory) -> i64> TsvColumns<P> for Per
                     .unwrap_or_default()
             )?;
         }
-        writeln!(w)
+        Ok(())
     }
 
     fn add_row(
         &mut self,
         w: &mut File,
-        period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()> {
-        write!(w, "{period}")?;
         for category in categories {
             let value = (self.get_value_fn)(period_data, category);
             write!(w, "\t{value}",)?;
         }
-        writeln!(w)
+        Ok(())
     }
 }
 
@@ -91,7 +87,6 @@ impl<P: Period> TsvColumns<P> for AccumulatedPeriodStatsFile {
         categories: &[IssueCategory],
         category_to_labels: &HashMap<IssueCategory, String>,
     ) -> std::io::Result<()> {
-        write!(w, "{}", P::STRING)?;
         for category in categories {
             write!(
                 w,
@@ -102,17 +97,15 @@ impl<P: Period> TsvColumns<P> for AccumulatedPeriodStatsFile {
                     .unwrap_or_default()
             )?;
         }
-        writeln!(w)
+        Ok(())
     }
 
     fn add_row(
         &mut self,
         w: &mut File,
-        period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
     ) -> std::io::Result<()> {
-        write!(w, "{period}")?;
         for category in categories {
             let delta = period_data.get(category, Counter::Opened)
                 - period_data.get(category, Counter::Closed);
@@ -123,6 +116,6 @@ impl<P: Period> TsvColumns<P> for AccumulatedPeriodStatsFile {
 
             write!(w, "\t{}", self.total.get(category).unwrap())?;
         }
-        writeln!(w)
+        Ok(())
     }
 }
