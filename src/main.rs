@@ -78,7 +78,7 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
         PeriodColumns::new("Closed ".to_string(), |data, category| {
             data.get(category, Counter::Closed)
         }),
-        PeriodColumns::new("Opened - Closed".to_string(), |data, category| {
+        PeriodColumns::new("Opened - Closed ".to_string(), |data, category| {
             data.get(category, Counter::Opened) - data.get(category, Counter::Closed)
         }),
         Box::new(AccumulatedPeriodStatsFile::new().unwrap()),
