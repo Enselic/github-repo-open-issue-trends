@@ -1,7 +1,6 @@
 use std::fmt::Display;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
 use tracing::*;
@@ -42,7 +41,7 @@ pub struct Args {
 
     /// Path of the output .tsv file
     #[arg(long, default_value = "issues.tsv")]
-    issues_output: PathBuf,
+    tsv_output: PathBuf,
 
     /// Where to save GitHub GraphQL API responses to save on the rate limit. By
     /// default `~/.cache/enselic/github-repo-open-issues/...` is used.
@@ -71,6 +70,7 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
     sorted_periods.sort();
 
     // Prepare output files
+    let mut tsv_output = File::create(&args.tsv_output)?;
     let mut tsv_columns: Vec<Box<dyn TsvColumns<P>>> = vec![
         PeriodColumns::new("Opened ".to_string(), |data, category| {
             data.get(category, Counter::Opened)
@@ -81,13 +81,17 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
         PeriodColumns::new("Opened - Closed".to_string(), |data, category| {
             data.get(category, Counter::Opened) - data.get(category, Counter::Closed)
         }),
-        Box::new(AccumulatedPeriodStatsFile::new(&args.open_issues_output).unwrap()),
+        Box::new(AccumulatedPeriodStatsFile::new().unwrap()),
     ];
 
     // Add headers to all files
     for output_file in &mut tsv_columns {
         output_file
-            .add_headers(&plot_data.categories, &plot_data.category_to_labels)
+            .add_headers(
+                &mut tsv_output,
+                &plot_data.categories,
+                &plot_data.category_to_labels,
+            )
             .unwrap();
     }
 
@@ -96,6 +100,7 @@ async fn run_main<P: Period>(args: &Args) -> anyhow::Result<()> {
         for output_file in &mut tsv_columns {
             output_file
                 .add_row(
+                    &mut tsv_output,
                     period,
                     plot_data.periods.get(period).unwrap(),
                     &plot_data.categories,

@@ -5,14 +5,14 @@ use super::*;
 pub trait TsvColumns<P: Period> {
     fn add_headers(
         &mut self,
-        w: &mut impl Write,
+        w: &mut File,
         categories: &[IssueCategory],
         category_to_labels: &HashMap<IssueCategory, String>,
     ) -> std::io::Result<()>;
 
     fn add_row(
         &mut self,
-        w: &mut impl Write,
+        w: &mut File,
         period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
@@ -36,7 +36,7 @@ impl<F: Fn(&PeriodData, &IssueCategory) -> i64> PeriodColumns<F> {
 impl<P: Period, F: Fn(&PeriodData, &IssueCategory) -> i64> TsvColumns<P> for PeriodColumns<F> {
     fn add_headers(
         &mut self,
-        w: &mut impl Write,
+        w: &mut File,
         categories: &[IssueCategory],
         category_to_labels: &HashMap<IssueCategory, String>,
     ) -> std::io::Result<()> {
@@ -58,7 +58,7 @@ impl<P: Period, F: Fn(&PeriodData, &IssueCategory) -> i64> TsvColumns<P> for Per
 
     fn add_row(
         &mut self,
-        w: &mut impl Write,
+        w: &mut File,
         period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
@@ -73,25 +73,21 @@ impl<P: Period, F: Fn(&PeriodData, &IssueCategory) -> i64> TsvColumns<P> for Per
 }
 
 pub struct AccumulatedPeriodStatsFile {
-    file: File,
     total: HashMap<IssueCategory, i64>,
 }
 
 impl AccumulatedPeriodStatsFile {
-    pub fn new(output_path: &Path) -> std::io::Result<Self> {
-        let file = File::create(output_path)?;
-        let x = Self {
-            file,
+    pub fn new() -> std::io::Result<Self> {
+        Ok(Self {
             total: HashMap::new(),
-        };
-        Ok(x)
+        })
     }
 }
 
 impl<P: Period> TsvColumns<P> for AccumulatedPeriodStatsFile {
     fn add_headers(
         &mut self,
-        w: &mut impl Write,
+        w: &mut File,
         categories: &[IssueCategory],
         category_to_labels: &HashMap<IssueCategory, String>,
     ) -> std::io::Result<()> {
@@ -111,7 +107,7 @@ impl<P: Period> TsvColumns<P> for AccumulatedPeriodStatsFile {
 
     fn add_row(
         &mut self,
-        w: &mut impl Write,
+        w: &mut File,
         period: &P,
         period_data: &PeriodData,
         categories: &[IssueCategory],
